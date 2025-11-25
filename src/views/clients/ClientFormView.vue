@@ -154,7 +154,7 @@ function handleCancel() {
 
 <style scoped>
 .client-form {
-  color: #e5e7eb;
+  color: #111827;
 }
 .header {
   margin-bottom: 1.5rem;
@@ -162,9 +162,11 @@ function handleCancel() {
 h1 {
   font-size: 1.6rem;
   margin-bottom: 0.3rem;
+  color: #000000;
+  font-weight: 700;
 }
 .subtitle {
-  color: #9ca3af;
+  color: #6b7280;
   font-size: 0.9rem;
 }
 .grid {
@@ -177,14 +179,18 @@ h1 {
   }
 }
 .card {
-  background: #020617;
+  background: #ffffff;
   border-radius: 0.75rem;
-  border: 1px solid #1f2937;
+  border: 1px solid #e5e5e5;
   padding: 1rem;
+  color: #111827;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 .card h2 {
   font-size: 1rem;
   margin-bottom: 0.75rem;
+  color: #000000;
+  font-weight: 700;
 }
 .fields {
   display: flex;

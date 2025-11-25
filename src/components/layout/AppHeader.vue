@@ -1,6 +1,7 @@
 <script setup>
 import { useAuthStore } from '../../stores/authStore'
 import { useRouter } from 'vue-router'
+import { RouterLink } from 'vue-router'
 
 const authStore = useAuthStore()
 const router = useRouter()
@@ -13,10 +14,13 @@ function handleLogout() {
 
 <template>
   <header class="header">
-    <div class="header-left">
-      <span class="logo">TuCreditoMiVivienda</span>
-      <span class="tagline">Simulador de créditos hipotecarios</span>
-    </div>
+    <RouterLink to="/dashboard" class="header-left">
+      <img src="/home.svg" alt="Logo" class="logo-icon" />
+      <div class="logo-text">
+        <span class="logo">TuCreditoMiVivienda</span>
+        <span class="tagline">Simulador de créditos hipotecarios</span>
+      </div>
+    </RouterLink>
 
     <div class="header-right" v-if="authStore.isAuthenticated">
       <span class="user-name">{{ authStore.user?.name }}</span>
@@ -35,8 +39,26 @@ function handleLogout() {
   border-bottom: none;          /* opcional */
 }
 
-
 .header-left {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.header-left:hover {
+  opacity: 0.8;
+}
+
+.logo-icon {
+  width: 50px;
+  height: 50px;
+  flex-shrink: 0;
+}
+
+.logo-text {
   display: flex;
   flex-direction: column;
 }
@@ -51,7 +73,6 @@ function handleLogout() {
   font-size: 0.85rem;
   color: #333333;
 }
-
 
 .header-right {
   display: flex;

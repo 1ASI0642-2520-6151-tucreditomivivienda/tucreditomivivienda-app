@@ -26,11 +26,11 @@ function onChange(event) {
   flex-direction: column;
   gap: 0.25rem;
   font-size: 0.85rem;
-  color: #e5e7eb;
 }
 
 .label {
-  color: #9ca3af;
+  color: #4b5563;
+  font-weight: 500;
 }
 
 .select {
