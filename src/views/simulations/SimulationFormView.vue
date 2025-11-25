@@ -282,10 +282,12 @@ function handleSimulate() {
 h1 {
   font-size: 1.6rem;
   margin-bottom: 0.3rem;
+  color: #000000;
+  font-weight: 700;
 }
 
 .subtitle {
-  color: #9ca3af;
+  color: #6b7280;
   font-size: 0.9rem;
 }
 
@@ -296,12 +298,16 @@ h1 {
   border: 1px solid #e5e5e5; /* borde clarito */
   padding: 0.75rem 1rem;
   color: #111827;            /* texto oscuro */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
 }
-
 
 .config-summary p {
   margin: 0;
   margin-bottom: 0.25rem;
+}
+
+.config-summary strong {
+  color: #111827;
 }
 
 .grid {
@@ -316,17 +322,19 @@ h1 {
 }
 
 .card {
-  background: #f6f6f6;
+  background: #ffffff;
   border-radius: 0.75rem;
   border: 1px solid #e5e5e5;    /* borde clarito */
   padding: 1.25rem;
   color: #111827;               /* texto oscuro dentro de la card */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
 }
-
 
 .card h2 {
   font-size: 1rem;
   margin-bottom: 0.75rem;
+  color: #000000;
+  font-weight: 700;
 }
 
 .fields {
@@ -348,6 +356,16 @@ h1 {
   display: flex;
   justify-content: space-between;
   font-size: 0.9rem;
+  color: #111827;
+}
+
+.summary li span {
+  color: #6b7280;
+}
+
+.summary li strong {
+  color: #111827;
+  font-weight: 600;
 }
 
 .btn-simulate {

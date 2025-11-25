@@ -95,7 +95,7 @@ function simulateClient(id) {
 
 <style scoped>
 .clients {
-  color: #e5e7eb;
+  color: #111827;
 }
 .header {
   display: flex;
@@ -107,23 +107,27 @@ function simulateClient(id) {
 h1 {
   font-size: 1.6rem;
   margin-bottom: 0.3rem;
+  color: #000000;
+  font-weight: 700;
 }
 .subtitle {
-  color: #9ca3af;
+  color: #6b7280;
   font-size: 0.9rem;
 }
 .state-msg {
-  background: #020617;
+  background: #ffffff;
   border-radius: 0.75rem;
-  border: 1px solid #1f2937;
+  border: 1px solid #e5e5e5;
   padding: 1.5rem;
   text-align: center;
+  color: #111827;
 }
 .table-card {
-  background: #020617;
+  background: #ffffff;
   border-radius: 0.75rem;
-  border: 1px solid #1f2937;
+  border: 1px solid #e5e5e5;
   padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 .table-wrapper {
   overflow: auto;
@@ -133,17 +137,21 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.85rem;
+  color: #111827;
 }
 th,
 td {
   padding: 0.45rem 0.5rem;
-  border-bottom: 1px solid #111827;
+  border-bottom: 1px solid #e5e5e5;
   text-align: left;
+  color: #111827;
 }
 th {
   position: sticky;
   top: 0;
-  background: #020617;
+  background: #ffffff;
+  font-weight: 600;
+  color: #000000;
 }
 .actions {
   white-space: nowrap;

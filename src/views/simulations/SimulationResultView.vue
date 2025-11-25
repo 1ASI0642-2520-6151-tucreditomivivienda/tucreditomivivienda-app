@@ -198,7 +198,7 @@ function goToNewSim() {
 
 <style scoped>
 .sim-result {
-  color: #e5e7eb;
+  color: #111827;
 }
 
 .header {
@@ -212,19 +212,22 @@ function goToNewSim() {
 h1 {
   font-size: 1.6rem;
   margin-bottom: 0.3rem;
+  color: #000000;
+  font-weight: 700;
 }
 
 .subtitle {
-  color: #9ca3af;
+  color: #6b7280;
   font-size: 0.9rem;
 }
 
 .empty {
-  background: #020617;
+  background: #ffffff;
   border-radius: 0.75rem;
-  border: 1px solid #1f2937;
+  border: 1px solid #e5e5e5;
   padding: 1.5rem;
   text-align: center;
+  color: #111827;
 }
 
 .summary-grid {
@@ -240,29 +243,51 @@ h1 {
 }
 
 .card {
-  background: #020617;
+  background: #ffffff;
   border-radius: 0.75rem;
-  border: 1px solid #1f2937;
+  border: 1px solid #e5e5e5;
   padding: 1rem;
   font-size: 0.9rem;
+  color: #111827;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .card h2 {
   font-size: 1rem;
   margin-bottom: 0.75rem;
+  color: #000000;
+  font-weight: 700;
 }
 
 .card p {
   display: flex;
   justify-content: space-between;
   margin: 0 0 0.3rem;
+  color: #111827;
+}
+
+.card p span {
+  color: #6b7280;
+}
+
+.card p strong {
+  color: #111827;
+  font-weight: 600;
 }
 
 .table-card {
-  background: #020617;
+  background: #ffffff;
   border-radius: 0.75rem;
-  border: 1px solid #1f2937;
+  border: 1px solid #e5e5e5;
   padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.table-card h2 {
+  color: #000000;
+  font-weight: 700;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .table-wrapper {
@@ -275,13 +300,15 @@ table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.8rem;
+  color: #111827;
 }
 
 th,
 td {
   padding: 0.4rem 0.5rem;
-  border-bottom: 1px solid #111827;
+  border-bottom: 1px solid #e5e5e5;
   text-align: right;
+  color: #111827;
 }
 
 th:first-child,
@@ -292,6 +319,8 @@ td:first-child {
 thead th {
   position: sticky;
   top: 0;
-  background: #020617;
+  background: #ffffff;
+  font-weight: 600;
+  color: #000000;
 }
 </style>

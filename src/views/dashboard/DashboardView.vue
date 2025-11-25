@@ -317,7 +317,7 @@ function goTo(routeName) {
 
 <style scoped>
 .dashboard {
-  color: #e5e7eb;
+  color: #111827;
 }
 
 .header {
@@ -327,10 +327,12 @@ function goTo(routeName) {
 h1 {
   font-size: 1.6rem;
   margin-bottom: 0.3rem;
+  color: #000000;
+  font-weight: 700;
 }
 
 .subtitle {
-  color: #838282;
+  color: #6b7280;
   font-size: 0.9rem;
 }
 
@@ -358,15 +360,17 @@ h1 {
 }
 
 .card {
-  background: #f6f6f6;        /* o #ffffff si quieres más blanco */
+  background: #ffffff;
   border-radius: 0.75rem;
   border: 1px solid #e5e5e5;
   padding: 1.25rem;
   color: #111827;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .card h2 {
-  color: #111827;
+  color: #000000;
+  font-weight: 700;
 }
 
 h1,
@@ -382,13 +386,15 @@ strong {
 .kpi h2 {
   font-size: 0.95rem;
   margin-bottom: 0.5rem;
-  color: #383838;
+  color: #000000;
+  font-weight: 700;
 }
 
 .value {
   font-size: 1.6rem;
   font-weight: 700;
   margin: 0 0 0.3rem;
+  color: #111827;
 }
 
 .value.available {
@@ -397,7 +403,7 @@ strong {
 
 .hint {
   font-size: 0.8rem;
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 /* Config */
@@ -412,7 +418,7 @@ strong {
 }
 
 .config-list span {
-  color: #757575;
+  color: #6b7280;
 }
 
 .config-actions {
@@ -443,6 +449,8 @@ strong {
 .sim-section h3 {
   font-size: 0.9rem;
   margin-bottom: 0.5rem;
+  color: #000000;
+  font-weight: 600;
 }
 
 .sim-section p {
@@ -452,7 +460,7 @@ strong {
 }
 
 .sim-section span {
-  color: #9ca3af;
+  color: #6b7280;
 }
 
 .sim-actions {
@@ -467,10 +475,12 @@ strong {
 .quick-actions h2 {
   font-size: 1rem;
   margin-bottom: 0.4rem;
+  color: #000000;
+  font-weight: 700;
 }
 
 .subtitle-small {
-  color: #9ca3af;
+  color: #6b7280;
   font-size: 0.85rem;
   margin-bottom: 0.8rem;
 }
