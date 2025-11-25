@@ -1,0 +1,25 @@
+:root {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color-scheme: dark;
+}
+
+/* Que el body no tenga margenes y ocupe todo */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* El contenedor raíz debe ocupar toda la pantalla */
+#app {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* (Opcional) quitar cualquier centrado global */
+* {
+  box-sizing: border-box;
+}
