@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { login as loginApi } from '../services/authService'
 
 const USER_KEY = 'mv_user'
 const TOKEN_KEY = 'mv_token'
@@ -13,26 +14,27 @@ export const useAuthStore = defineStore('auth', {
     },
     actions: {
         async login({ email, password }) {
-            // LOGIN FALSO por ahora (luego se reemplaza por backend)
-            const demoEmail = 'demo@inmobiliaria.com'
-            const demoPassword = '123456'
-
-            if (email === demoEmail && password === demoPassword) {
-                const fakeToken = 'fake-jwt-token'
-
-                this.user = {
-                    email,
-                    name: 'Asesor MiVivienda Demo'
-                }
-                this.token = fakeToken
-
-                localStorage.setItem(USER_KEY, JSON.stringify(this.user))
-                localStorage.setItem(TOKEN_KEY, fakeToken)
-
-                return true
+            // Validar que los campos no estén vacíos
+            if (!email || !password) {
+                throw new Error('Por favor ingresa tu correo y contraseña')
             }
+            
+            // llamamos al backend
+            const { token, user } = await loginApi(email, password)
 
-            throw new Error('Credenciales incorrectas')
+            // opcional: adaptamos nombres de campos
+            this.user = {
+                id: user.id,
+                email: user.email,
+                name: user.nombre,
+                role: user.rol
+            }
+            this.token = token
+
+            localStorage.setItem(USER_KEY, JSON.stringify(this.user))
+            localStorage.setItem(TOKEN_KEY, this.token)
+
+            return true
         },
         logout() {
             this.user = null
