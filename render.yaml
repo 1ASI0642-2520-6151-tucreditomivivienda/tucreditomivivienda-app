@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: tucreditomivivienda-frontend
+    env: node
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+        # Reemplaza con la URL de tu backend en Render
+        # Ejemplo: https://tu-backend.onrender.com
+
