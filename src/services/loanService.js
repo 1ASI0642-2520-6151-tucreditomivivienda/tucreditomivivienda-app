@@ -207,3 +207,122 @@ export function generateFrenchSchedule(principal, config) {
 
     return { schedule, summary, cashFlows }
 }
+
+// ========== API Functions ==========
+import { request } from './api'
+
+/**
+ * Obtiene todas las simulaciones guardadas (historial)
+ */
+export async function fetchSimulations() {
+    return await request('/api/loans/simulations')
+}
+
+/**
+ * Obtiene una simulación específica por ID
+ */
+export async function getSimulationById(id) {
+    return await request(`/api/loans/simulations/${id}`)
+}
+
+/**
+ * Elimina una simulación
+ */
+export async function deleteSimulation(id) {
+    await request(`/api/loans/simulations/${id}`, {
+        method: 'DELETE'
+    })
+}
+
+/**
+ * Calcula y guarda una simulación en el backend
+ * El backend calcula con gracia y devuelve el resultado completo
+ */
+export async function simulateAndSave(principal, config, clientId = null, propertyId = null) {
+    const payload = {
+        principal: principal,
+        config: {
+            currency: config.currency || 'PEN',
+            rateType: config.rateType || 'efectiva',
+            rateValue: config.rateValue || 12,
+            capitalization: config.capitalization || 'mensual',
+            termMonths: config.termMonths || 240,
+            graceType: config.graceType || 'sin',
+            graceMonths: config.graceMonths || 0
+        },
+        clientId: clientId,
+        propertyId: propertyId
+    }
+    
+    // El backend calcula y guarda automáticamente
+    return await request('/api/loans/simulate', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+    })
+}
+
+/**
+ * Adapta el resultado del backend al formato del frontend
+ * El backend devuelve propiedades en PascalCase (Month, Payment, etc.)
+ */
+export function adaptBackendResult(backendResult, inputData) {
+    // El backend puede devolver en PascalCase o camelCase, manejamos ambos
+    const summary = backendResult.summary || backendResult.Summary || {}
+    const schedule = backendResult.schedule || backendResult.Schedule || []
+    
+    // Adaptar schedule del backend al formato del frontend
+    let previousBalance = summary.principal || summary.Principal || 0
+    const adaptedSchedule = schedule.map((payment) => {
+        // Manejar tanto camelCase como PascalCase
+        const month = payment.month || payment.Month || 0
+        const paymentAmount = payment.payment || payment.Payment || 0
+        const interest = payment.interest || payment.Interest || 0
+        const principalPaid = payment.principalPaid || payment.PrincipalPaid || 0
+        const balance = payment.balance || payment.Balance || 0
+        
+        const saldoInicial = previousBalance
+        previousBalance = balance
+        
+        return {
+            period: month,
+            saldoInicial: saldoInicial,
+            cuota: paymentAmount,
+            interes: interest,
+            amortizacion: principalPaid,
+            saldoFinal: balance
+        }
+    })
+
+    // Calcular cashFlows para VAN y TIR
+    const principal = summary.principal || summary.Principal || 0
+    const cashFlows = [-principal]
+    adaptedSchedule.forEach(payment => {
+        cashFlows.push(payment.cuota || 0)
+    })
+
+    // Calcular VAN y TIR
+    const monthlyRatePercent = summary.monthlyRate || summary.MonthlyRate || 0
+    const monthlyRate = monthlyRatePercent / 100
+    const npv = calculateNPV(monthlyRate, cashFlows)
+    const irrMonthly = calculateIRR(cashFlows)
+    const irrAnnual = irrMonthly != null ? Math.pow(1 + irrMonthly, 12) - 1 : null
+
+    // Adaptar summary
+    const adaptedSummary = {
+        principal: principal,
+        termMonths: summary.termMonths || summary.TermMonths || 0,
+        monthlyRate: monthlyRate,
+        totalPaid: summary.totalPaid || summary.TotalPaid || 0,
+        totalInterest: summary.totalInterest || summary.TotalInterest || 0,
+        npv: npv,
+        irrMonthly: irrMonthly,
+        irrAnnual: irrAnnual
+    }
+
+    return {
+        input: inputData,
+        schedule: adaptedSchedule,
+        summary: adaptedSummary,
+        cashFlows
+    }
+}

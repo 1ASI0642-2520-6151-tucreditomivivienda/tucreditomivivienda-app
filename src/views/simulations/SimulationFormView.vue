@@ -5,7 +5,7 @@ import { useConfigStore } from '../../stores/configStore'
 import { useLoanStore } from '../../stores/loanStore'
 import { useClientStore } from '../../stores/clientStore'
 import { usePropertyStore } from '../../stores/propertyStore'
-import { generateFrenchSchedule } from '../../services/loanService'
+import { simulateAndSave, adaptBackendResult } from '../../services/loanService'
 import BaseInput from '../../components/ui/BaseInput.vue'
 import BaseSelect from '../../components/ui/BaseSelect.vue'
 import BaseButton from '../../components/ui/BaseButton.vue'
@@ -63,7 +63,8 @@ function formatMoney(value) {
 onMounted(async () => {
   await Promise.all([
     clientStore.loadClients(),
-    propertyStore.loadProperties()
+    propertyStore.loadProperties(),
+    loanStore.loadHistory()
   ])
 
   // Si viene un cliente / unidad por query, los preseleccionamos
@@ -82,6 +83,54 @@ onMounted(async () => {
   }
 })
 
+async function handleDeleteSimulation(id) {
+  if (!confirm('¿Estás seguro de eliminar esta simulación del historial?')) {
+    return
+  }
+  try {
+    await loanStore.removeSimulation(id)
+  } catch (err) {
+    alert(err.message || 'Error al eliminar la simulación')
+  }
+}
+
+function formatDate(dateString) {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return date.toLocaleDateString('es-PE', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// Función para formatear dinero con la moneda correcta de la simulación
+function formatMoneyWithCurrency(value, sim) {
+  const currency = sim.currency || sim.Currency || 'PEN'
+  const symbol = currency === 'PEN' ? 'S/' : '$'
+  return (
+      symbol +
+      ' ' +
+      (Number(value) || 0).toLocaleString('es-PE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      })
+  )
+}
+
+// Función para obtener el nombre del cliente de una simulación
+function getClientName(sim) {
+  const clientId = sim.clientId || sim.ClientId
+  if (!clientId) return null
+  
+  const client = clientStore.getById(clientId)
+  if (!client) return null
+  
+  return `${client.apellidos}, ${client.nombres}`
+}
+
 // Cuando cambie la unidad seleccionada, actualizamos el precio
 watch(
     () => state.selectedPropertyId,
@@ -93,7 +142,7 @@ watch(
     }
 )
 
-function handleSimulate() {
+async function handleSimulate() {
   if (!state.selectedClientId) {
     alert('Selecciona un cliente para la simulación.')
     return
@@ -109,28 +158,41 @@ function handleSimulate() {
       ? propertyStore.getById(state.selectedPropertyId)
       : null
 
-  const { schedule, summary, cashFlows } = generateFrenchSchedule(
-      loanAmount.value,
-      configStore.config
-  )
+  // Preparar datos de entrada
+  const inputData = {
+    ...form,
+    loanAmount: loanAmount.value,
+    initialAmount: initialAmount.value,
+    bonoTecho: Number(form.bonoTecho) || 0,
+    configSnapshot: { ...configStore.config },
+    currencySymbol: currencySymbol.value,
+    selectedClient,
+    selectedProperty
+  }
 
-  loanStore.setSimulation({
-    input: {
-      ...form,
-      loanAmount: loanAmount.value,
-      initialAmount: initialAmount.value,
-      bonoTecho: Number(form.bonoTecho) || 0,
-      configSnapshot: { ...configStore.config },
-      currencySymbol: currencySymbol.value,
-      selectedClient,
-      selectedProperty
-    },
-    schedule,
-    summary,
-    cashFlows
-  })
+  try {
+    // El backend calcula y guarda automáticamente
+    const backendResult = await simulateAndSave(
+        loanAmount.value,
+        configStore.config,
+        selectedClient?.id || null,
+        selectedProperty?.id || null
+    )
 
-  router.push({ name: 'simulation-result' })
+    // Adaptar resultado del backend al formato del frontend
+    const simulationData = adaptBackendResult(backendResult, inputData)
+
+    // Guardar en el store para mostrar en la vista de resultados
+    loanStore.setSimulation(simulationData)
+
+    // Recargar el historial después de guardar
+    await loanStore.loadHistory()
+
+    router.push({ name: 'simulation-result' })
+  } catch (err) {
+    console.error('Error al calcular simulación:', err)
+    alert(err.message || 'Error al calcular la simulación. Verifica que el backend esté corriendo.')
+  }
 }
 </script>
 
@@ -262,6 +324,93 @@ function handleSimulate() {
         </BaseButton>
       </div>
     </div>
+
+    <!-- Historial de simulaciones -->
+    <div class="history-section">
+      <div class="history-header">
+        <h2>Historial de simulaciones</h2>
+        <BaseButton
+            variant="outline"
+            size="small"
+            @click="loanStore.loadHistory()"
+            :disabled="loanStore.loadingHistory"
+        >
+          {{ loanStore.loadingHistory ? 'Cargando...' : 'Actualizar' }}
+        </BaseButton>
+      </div>
+
+      <div v-if="loanStore.loadingHistory && loanStore.history.length === 0" class="history-loading">
+        <p>Cargando historial...</p>
+      </div>
+
+      <div v-else-if="loanStore.error" class="history-error">
+        <p>Error: {{ loanStore.error }}</p>
+      </div>
+
+      <div v-else-if="loanStore.history.length === 0" class="history-empty">
+        <p>No hay simulaciones guardadas aún.</p>
+        <p class="hint">Las simulaciones se guardan automáticamente cuando generas un plan de pagos.</p>
+      </div>
+
+      <div v-else class="history-grid">
+        <div
+            v-for="sim in loanStore.history"
+            :key="sim.id"
+            class="history-card"
+        >
+          <div class="history-card-header">
+            <div class="history-card-title">
+              <h3>
+                <template v-if="getClientName(sim)">
+                  {{ getClientName(sim) }}
+                </template>
+                <template v-else>
+                  Simulación #{{ (sim.id || sim.Id || '').toString().substring(0, 8) || 'N/A' }}
+                </template>
+              </h3>
+              <span class="history-date">{{ formatDate(sim.createdAt || sim.CreatedAt) }}</span>
+            </div>
+            <BaseButton
+                variant="outline"
+                size="small"
+                @click="handleDeleteSimulation(sim.id || sim.Id)"
+            >
+              Eliminar
+            </BaseButton>
+          </div>
+
+          <div class="history-card-content">
+            <div class="history-row">
+              <span class="label">Monto financiado:</span>
+              <strong>{{ formatMoneyWithCurrency(sim.principal || sim.Principal || 0, sim) }}</strong>
+            </div>
+            <div class="history-row">
+              <span class="label">Plazo:</span>
+              <strong>{{ sim.termMonths || sim.TermMonths || 0 }} meses</strong>
+            </div>
+            <div class="history-row">
+              <span class="label">Cuota mensual:</span>
+              <strong>{{ formatMoneyWithCurrency(sim.monthlyPayment || sim.MonthlyPayment || 0, sim) }}</strong>
+            </div>
+            <div class="history-row">
+              <span class="label">Total pagado:</span>
+              <strong>{{ formatMoneyWithCurrency(sim.totalPaid || sim.TotalPaid || 0, sim) }}</strong>
+            </div>
+            <div class="history-row">
+              <span class="label">Intereses totales:</span>
+              <strong>{{ formatMoneyWithCurrency(sim.totalInterest || sim.TotalInterest || 0, sim) }}</strong>
+            </div>
+            <div class="history-row">
+              <span class="label">Tasa anual:</span>
+              <strong>
+                {{ (sim.rateValue || sim.RateValue || 0).toFixed(2) }}% /
+                {{ (sim.rateType || sim.RateType || 'efectiva') === 'efectiva' ? 'TEA' : 'TNA' }}
+              </strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 </template>
 
@@ -371,5 +520,102 @@ h1 {
 .btn-simulate {
   width: 100%;
   margin-top: 0.5rem;
+}
+
+.history-section {
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e5e5e5;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.history-header h2 {
+  font-size: 1.3rem;
+  color: #000000;
+  font-weight: 700;
+  margin: 0;
+}
+
+.history-loading,
+.history-error,
+.history-empty {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e5e5;
+  padding: 2rem;
+  text-align: center;
+  color: #6b7280;
+}
+
+.history-empty .hint {
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  color: #9ca3af;
+}
+
+.history-error {
+  color: #dc2626;
+}
+
+.history-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+}
+
+.history-card {
+  background: #ffffff;
+  border-radius: 0.75rem;
+  border: 1px solid #e5e5e5;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.history-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.history-card-title h3 {
+  font-size: 0.95rem;
+  color: #000000;
+  font-weight: 700;
+  margin: 0 0 0.25rem 0;
+}
+
+.history-date {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+
+.history-card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.history-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+}
+
+.history-row .label {
+  color: #6b7280;
+}
+
+.history-row strong {
+  color: #111827;
+  font-weight: 600;
 }
 </style>
