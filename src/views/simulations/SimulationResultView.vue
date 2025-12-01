@@ -1,11 +1,14 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLoanStore } from '../../stores/loanStore'
 import BaseButton from '../../components/ui/BaseButton.vue'
 
 const loanStore = useLoanStore()
 const router = useRouter()
+
+// Estado para mostrar/ocultar TIR y VAN
+const showAdvancedMetrics = ref(false)
 
 const simulation = computed(() => loanStore.currentSimulation)
 const hasSimulation = computed(() => !!simulation.value)
@@ -192,9 +195,17 @@ function goToNewSim() {
             <span>Cuota inicial:</span>
             <strong>{{ formatMoney(simulation.input.initialAmount) }}</strong>
           </p>
-          <p>
+          <p v-if="simulation.input.bonoTecho > 0">
             <span>Bono Techo Propio:</span>
             <strong>{{ formatMoney(simulation.input.bonoTecho) }}</strong>
+          </p>
+          <p v-if="simulation.input.bonoBBP > 0">
+            <span>Bono del Buen Pagador (BBP):</span>
+            <strong>{{ formatMoney(simulation.input.bonoBBP || 0) }}</strong>
+          </p>
+          <p v-if="simulation.input.bonoBFH > 0">
+            <span>Bono Familiar Habitacional (BFH):</span>
+            <strong>{{ formatMoney(simulation.input.bonoBFH || 0) }}</strong>
           </p>
           <p v-if="termYears">
             <span>Plazo:</span>
@@ -203,14 +214,6 @@ function goToNewSim() {
           <p>
             <span>Plazo:</span>
             <strong>{{ termMonths }} meses</strong>
-          </p>
-          <p>
-            <span>TEA (Tasa Efectiva Anual):</span>
-            <strong>{{ formatPercent(tea) }}</strong>
-          </p>
-          <p>
-            <span>TEM (Tasa Efectiva Mensual):</span>
-            <strong>{{ formatPercent(tem) }}</strong>
           </p>
           <p>
             <span>Periodo de gracia:</span>
@@ -234,17 +237,29 @@ function goToNewSim() {
             <strong>{{ formatMoney(simulation.summary.totalInterest) }}</strong>
           </p>
           <p>
-            <span>VAN (a tasa del crédito):</span>
-            <strong>{{ formatMoney(simulation.summary.npv) }}</strong>
+            <span>TEA (Tasa Efectiva Anual):</span>
+            <strong>{{ formatPercent(tea) }}</strong>
           </p>
           <p>
-            <span>TIR mensual estimada:</span>
-            <strong>{{ formatPercent(simulation.summary.irrMonthly) }}</strong>
+            <span>TEM (Tasa Efectiva Mensual):</span>
+            <strong>{{ formatPercent(tem) }}</strong>
           </p>
-          <p>
-            <span>TIR anual estimada:</span>
-            <strong>{{ formatPercent(simulation.summary.irrAnnual) }}</strong>
-          </p>
+          <div class="advanced-metrics-toggle" @click="showAdvancedMetrics = !showAdvancedMetrics">
+            <span class="toggle-text">
+              {{ showAdvancedMetrics ? 'Ocultar' : 'Mostrar' }} métricas avanzadas
+            </span>
+            <span class="toggle-icon">{{ showAdvancedMetrics ? '▼' : '▶' }}</span>
+          </div>
+          <div v-if="showAdvancedMetrics" class="advanced-metrics">
+            <p>
+              <span>VAN (a tasa del crédito):</span>
+              <strong>{{ formatMoney(simulation.summary.npv) }}</strong>
+            </p>
+            <p>
+              <span>TIR anual estimada:</span>
+              <strong>{{ formatPercent(simulation.summary.irrAnnual) }}</strong>
+            </p>
+          </div>
         </div>
       </div>
 

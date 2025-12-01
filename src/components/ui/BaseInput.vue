@@ -5,7 +5,8 @@ const props = defineProps({
   type: { type: String, default: 'text' },
   placeholder: { type: String, default: '' },
   min: { type: [Number, String], default: undefined },
-  step: { type: [Number, String], default: undefined }
+  step: { type: [Number, String], default: undefined },
+  disabled: { type: Boolean, default: false }
 })
 
 const emit = defineEmits(['update:modelValue'])
@@ -25,6 +26,7 @@ function onInput(event) {
         :placeholder="placeholder"
         :min="min"
         :step="step"
+        :disabled="disabled"
         @input="onInput"
     />
   </label>
@@ -54,6 +56,13 @@ function onInput(event) {
 .input:focus {
   outline: none;
   border-color: #00c853;        /* verde al enfocarse */
+}
+
+.input:disabled {
+  background-color: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+  opacity: 0.6;
 }
 
 </style>

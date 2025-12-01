@@ -200,7 +200,7 @@ export function generateFrenchSchedule(principal, config) {
     const summary = {
         principal,
         termMonths,
-        monthlyRate,
+        monthlyRate: monthlyRate * 100, // Guardar como porcentaje para consistencia
         totalPaid,
         totalInterest,
         npv,
@@ -278,9 +278,12 @@ export function adaptBackendResult(backendResult, inputData) {
     const graceType = config.graceType || 'sin'
     const graceMonths = Number(config.graceMonths) || 0
     
-    // Obtener tasa mensual
-    const monthlyRatePercent = summary.monthlyRate || summary.MonthlyRate || 0
-    const monthlyRate = monthlyRatePercent / 100
+    // Obtener tasa mensual (puede venir como porcentaje o decimal)
+    const monthlyRateFromSummary = summary.monthlyRate || summary.MonthlyRate || 0
+    // Si es mayor a 1, asumimos que es porcentaje, si no, es decimal
+    const monthlyRate = monthlyRateFromSummary > 1 
+        ? monthlyRateFromSummary / 100 
+        : monthlyRateFromSummary
     
     // Adaptar schedule del backend al formato del frontend
     let previousBalance = summary.principal || summary.Principal || 0
@@ -331,11 +334,11 @@ export function adaptBackendResult(backendResult, inputData) {
     const totalPaid = adaptedSchedule.reduce((sum, row) => sum + row.cuota, 0)
     const totalInterest = adaptedSchedule.reduce((sum, row) => sum + row.interes, 0)
 
-    // Adaptar summary
+    // Adaptar summary (monthlyRate como porcentaje para consistencia)
     const adaptedSummary = {
         principal: principal,
         termMonths: summary.termMonths || summary.TermMonths || 0,
-        monthlyRate: monthlyRate,
+        monthlyRate: monthlyRate * 100, // Convertir a porcentaje para consistencia
         totalPaid: totalPaid,
         totalInterest: totalInterest,
         npv: npv,

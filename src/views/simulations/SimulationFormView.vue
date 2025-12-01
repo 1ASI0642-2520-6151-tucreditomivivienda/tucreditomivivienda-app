@@ -20,7 +20,12 @@ const route = useRoute()
 const form = reactive({
   propertyPrice: 250000,
   initialPercent: 10,
-  bonoTecho: 0
+  bonoTecho: 0,
+  bonoBBP: 0,
+  bonoBFH: 0,
+  enableBonoTecho: false,
+  enableBonoBBP: false,
+  enableBonoBFH: false
 })
 
 const state = reactive({
@@ -40,9 +45,11 @@ const initialAmount = computed(() => {
 
 const loanAmount = computed(() => {
   const price = Number(form.propertyPrice) || 0
-  const bono = Number(form.bonoTecho) || 0
+  const bonoTecho = form.enableBonoTecho ? (Number(form.bonoTecho) || 0) : 0
+  const bonoBBP = form.enableBonoBBP ? (Number(form.bonoBBP) || 0) : 0
+  const bonoBFH = form.enableBonoBFH ? (Number(form.bonoBFH) || 0) : 0
   const ci = initialAmount.value
-  const result = price - ci - bono
+  const result = price - ci - bonoTecho - bonoBBP - bonoBFH
   return result > 0 ? result : 0
 })
 
@@ -142,6 +149,28 @@ watch(
     }
 )
 
+// Resetear valores de bonos cuando se deshabilitan
+watch(
+    () => form.enableBonoTecho,
+    (enabled) => {
+      if (!enabled) form.bonoTecho = 0
+    }
+)
+
+watch(
+    () => form.enableBonoBBP,
+    (enabled) => {
+      if (!enabled) form.bonoBBP = 0
+    }
+)
+
+watch(
+    () => form.enableBonoBFH,
+    (enabled) => {
+      if (!enabled) form.bonoBFH = 0
+    }
+)
+
 async function handleSimulate() {
   if (!state.selectedClientId) {
     alert('Selecciona un cliente para la simulación.')
@@ -163,7 +192,9 @@ async function handleSimulate() {
     ...form,
     loanAmount: loanAmount.value,
     initialAmount: initialAmount.value,
-    bonoTecho: Number(form.bonoTecho) || 0,
+    bonoTecho: form.enableBonoTecho ? (Number(form.bonoTecho) || 0) : 0,
+    bonoBBP: form.enableBonoBBP ? (Number(form.bonoBBP) || 0) : 0,
+    bonoBFH: form.enableBonoBFH ? (Number(form.bonoBFH) || 0) : 0,
     configSnapshot: { ...configStore.config },
     currencySymbol: currencySymbol.value,
     selectedClient,
@@ -272,13 +303,60 @@ async function handleSimulate() {
               max="90"
               step="0.1"
           />
-          <BaseInput
-              v-model="form.bonoTecho"
-              :label="`Bono Techo Propio (${currencySymbol})`"
-              type="number"
-              min="0"
-              step="0.01"
-          />
+          <div class="bono-field">
+            <div class="bono-checkbox">
+              <input
+                  type="checkbox"
+                  id="bonoTecho"
+                  v-model="form.enableBonoTecho"
+              />
+              <label for="bonoTecho">Bono Techo Propio</label>
+            </div>
+            <BaseInput
+                v-if="form.enableBonoTecho"
+                v-model="form.bonoTecho"
+                :label="`Bono Techo Propio (${currencySymbol})`"
+                type="number"
+                min="0"
+                step="0.01"
+            />
+          </div>
+          <div class="bono-field">
+            <div class="bono-checkbox">
+              <input
+                  type="checkbox"
+                  id="bonoBBP"
+                  v-model="form.enableBonoBBP"
+              />
+              <label for="bonoBBP">Bono del Buen Pagador (BBP)</label>
+            </div>
+            <BaseInput
+                v-if="form.enableBonoBBP"
+                v-model="form.bonoBBP"
+                :label="`Bono del Buen Pagador - BBP (${currencySymbol})`"
+                type="number"
+                min="0"
+                step="0.01"
+            />
+          </div>
+          <div class="bono-field">
+            <div class="bono-checkbox">
+              <input
+                  type="checkbox"
+                  id="bonoBFH"
+                  v-model="form.enableBonoBFH"
+              />
+              <label for="bonoBFH">Bono Familiar Habitacional (BFH)</label>
+            </div>
+            <BaseInput
+                v-if="form.enableBonoBFH"
+                v-model="form.bonoBFH"
+                :label="`Bono Familiar Habitacional - BFH (${currencySymbol})`"
+                type="number"
+                min="0"
+                step="0.01"
+            />
+          </div>
         </div>
       </div>
 
@@ -490,6 +568,33 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+}
+
+.bono-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.bono-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bono-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #3b82f6;
+}
+
+.bono-checkbox label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #111827;
+  cursor: pointer;
+  user-select: none;
 }
 
 .summary ul {
