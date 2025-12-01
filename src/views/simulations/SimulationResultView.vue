@@ -19,6 +19,68 @@ const property = computed(
     () => simulation.value?.input.selectedProperty || null
 )
 
+// Configuración de la simulación
+const config = computed(() => simulation.value?.input?.configSnapshot || {})
+const termMonths = computed(() => simulation.value?.summary?.termMonths || 0)
+const monthlyRate = computed(() => simulation.value?.summary?.monthlyRate || 0)
+
+// Calcular TEA desde la configuración
+const tea = computed(() => {
+  if (!config.value.rateValue) return 0
+  const rate = Number(config.value.rateValue) / 100
+  
+  if (config.value.rateType === 'efectiva') {
+    return rate
+  }
+  
+  // Si es nominal, convertir a TEA
+  const m = getCapitalizationsPerYear(config.value.capitalization || 'mensual')
+  return Math.pow(1 + rate / m, m) - 1
+})
+
+// TEM calculado desde TEA: TEM = (1 + TEA)^(1/12) - 1
+const tem = computed(() => {
+  if (tea.value <= 0) return 0
+  return Math.pow(1 + tea.value, 1 / 12) - 1
+})
+
+// Plazo en años
+const termYears = computed(() => {
+  if (termMonths.value < 12) return null
+  return (termMonths.value / 12).toFixed(1)
+})
+
+// Información de periodo de gracia
+const graceInfo = computed(() => {
+  const graceType = config.value.graceType || 'sin'
+  const graceMonths = Number(config.value.graceMonths) || 0
+  
+  if (graceType === 'sin') {
+    return { label: 'Sin periodo de gracia', months: 0 }
+  }
+  
+  const typeLabels = {
+    total: 'Gracia total',
+    parcial: 'Gracia parcial'
+  }
+  
+  return {
+    label: typeLabels[graceType] || 'Gracia',
+    months: graceMonths
+  }
+})
+
+function getCapitalizationsPerYear(capitalization) {
+  switch (capitalization) {
+    case 'mensual': return 12
+    case 'bimestral': return 6
+    case 'trimestral': return 4
+    case 'semestral': return 2
+    case 'anual':
+    default: return 1
+  }
+}
+
 function formatMoney(value) {
   return (
       currencySymbol.value +
@@ -134,9 +196,30 @@ function goToNewSim() {
             <span>Bono Techo Propio:</span>
             <strong>{{ formatMoney(simulation.input.bonoTecho) }}</strong>
           </p>
+          <p v-if="termYears">
+            <span>Plazo:</span>
+            <strong>{{ termYears }} años</strong>
+          </p>
           <p>
             <span>Plazo:</span>
-            <strong>{{ simulation.summary.termMonths }} meses</strong>
+            <strong>{{ termMonths }} meses</strong>
+          </p>
+          <p>
+            <span>TEA (Tasa Efectiva Anual):</span>
+            <strong>{{ formatPercent(tea) }}</strong>
+          </p>
+          <p>
+            <span>TEM (Tasa Efectiva Mensual):</span>
+            <strong>{{ formatPercent(tem) }}</strong>
+          </p>
+          <p>
+            <span>Periodo de gracia:</span>
+            <strong>
+              {{ graceInfo.label }}
+              <template v-if="graceInfo.months > 0">
+                ({{ graceInfo.months }} {{ graceInfo.months === 1 ? 'mes' : 'meses' }})
+              </template>
+            </strong>
           </p>
         </div>
 
@@ -173,9 +256,9 @@ function goToNewSim() {
             <tr>
               <th>Periodo</th>
               <th>Saldo inicial</th>
-              <th>Cuota</th>
               <th>Interés</th>
               <th>Amortización</th>
+              <th>Cuota</th>
               <th>Saldo final</th>
             </tr>
             </thead>
@@ -183,9 +266,9 @@ function goToNewSim() {
             <tr v-for="row in simulation.schedule" :key="row.period">
               <td>{{ row.period }}</td>
               <td>{{ formatMoney(row.saldoInicial) }}</td>
-              <td>{{ formatMoney(row.cuota) }}</td>
               <td>{{ formatMoney(row.interes) }}</td>
               <td>{{ formatMoney(row.amortizacion) }}</td>
+              <td>{{ formatMoney(row.cuota) }}</td>
               <td>{{ formatMoney(row.saldoFinal) }}</td>
             </tr>
             </tbody>
@@ -301,6 +384,7 @@ table {
   border-collapse: collapse;
   font-size: 0.8rem;
   color: #111827;
+  table-layout: fixed;
 }
 
 th,
@@ -311,9 +395,44 @@ td {
   color: #111827;
 }
 
+/* Columna Periodo - muy pequeña */
 th:first-child,
 td:first-child {
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
   text-align: center;
+  padding: 0.4rem 0.25rem;
+}
+
+/* Saldo inicial - más espacio */
+th:nth-child(2),
+td:nth-child(2) {
+  width: 18%;
+}
+
+/* Interés - más espacio */
+th:nth-child(3),
+td:nth-child(3) {
+  width: 18%;
+}
+
+/* Amortización - más espacio */
+th:nth-child(4),
+td:nth-child(4) {
+  width: 18%;
+}
+
+/* Cuota - más espacio */
+th:nth-child(5),
+td:nth-child(5) {
+  width: 18%;
+}
+
+/* Saldo final - más espacio */
+th:nth-child(6),
+td:nth-child(6) {
+  width: 18%;
 }
 
 thead th {

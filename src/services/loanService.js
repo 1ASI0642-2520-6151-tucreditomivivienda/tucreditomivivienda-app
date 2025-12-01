@@ -112,12 +112,15 @@ export function generateFrenchSchedule(principal, config) {
     // 1) Meses de gracia (si los hay)
     if (graceType === 'total' && graceMonths > 0) {
         // Gracia total: no se paga nada, los intereses se capitalizan
+        // En la tabla no se muestra el interés porque no se paga, solo se capitaliza
         for (let g = 0; g < graceMonths; g++) {
             const saldoInicial = balance
-            const interes = saldoInicial * monthlyRate
+            // El saldo final se calcula capitalizando: Saldo Final = Saldo Inicial * (1 + tasa)
+            const saldoFinal = saldoInicial * (1 + monthlyRate)
             const cuota = 0
             const amortizacion = 0
-            const saldoFinal = saldoInicial + interes
+            // El interés no se muestra en la tabla durante gracia total (se muestra como 0)
+            const interes = 0
 
             schedule.push({
                 period,
@@ -270,23 +273,42 @@ export function adaptBackendResult(backendResult, inputData) {
     const summary = backendResult.summary || backendResult.Summary || {}
     const schedule = backendResult.schedule || backendResult.Schedule || []
     
+    // Obtener configuración de gracia del inputData
+    const config = inputData?.configSnapshot || {}
+    const graceType = config.graceType || 'sin'
+    const graceMonths = Number(config.graceMonths) || 0
+    
+    // Obtener tasa mensual
+    const monthlyRatePercent = summary.monthlyRate || summary.MonthlyRate || 0
+    const monthlyRate = monthlyRatePercent / 100
+    
     // Adaptar schedule del backend al formato del frontend
     let previousBalance = summary.principal || summary.Principal || 0
-    const adaptedSchedule = schedule.map((payment) => {
+    const adaptedSchedule = schedule.map((payment, index) => {
         // Manejar tanto camelCase como PascalCase
         const month = payment.month || payment.Month || 0
         const paymentAmount = payment.payment || payment.Payment || 0
-        const interest = payment.interest || payment.Interest || 0
-        const principalPaid = payment.principalPaid || payment.PrincipalPaid || 0
-        const balance = payment.balance || payment.Balance || 0
+        let interest = payment.interest || payment.Interest || 0
+        let principalPaid = payment.principalPaid || payment.PrincipalPaid || 0
+        let balance = payment.balance || payment.Balance || 0
         
         const saldoInicial = previousBalance
+        
+        // Corregir valores durante periodo de gracia TOTAL
+        // En gracia total: interés = 0, cuota = 0, amortización = 0, saldo final se capitaliza
+        if (graceType === 'total' && index < graceMonths) {
+            interest = 0  // No se muestra interés durante gracia total
+            principalPaid = 0  // No hay amortización
+            // El saldo final se calcula capitalizando: Saldo Final = Saldo Inicial * (1 + tasa)
+            balance = saldoInicial * (1 + monthlyRate)
+        }
+        
         previousBalance = balance
         
         return {
             period: month,
             saldoInicial: saldoInicial,
-            cuota: paymentAmount,
+            cuota: graceType === 'total' && index < graceMonths ? 0 : paymentAmount,
             interes: interest,
             amortizacion: principalPaid,
             saldoFinal: balance
@@ -301,19 +323,21 @@ export function adaptBackendResult(backendResult, inputData) {
     })
 
     // Calcular VAN y TIR
-    const monthlyRatePercent = summary.monthlyRate || summary.MonthlyRate || 0
-    const monthlyRate = monthlyRatePercent / 100
     const npv = calculateNPV(monthlyRate, cashFlows)
     const irrMonthly = calculateIRR(cashFlows)
     const irrAnnual = irrMonthly != null ? Math.pow(1 + irrMonthly, 12) - 1 : null
+
+    // Recalcular totales basados en el schedule corregido
+    const totalPaid = adaptedSchedule.reduce((sum, row) => sum + row.cuota, 0)
+    const totalInterest = adaptedSchedule.reduce((sum, row) => sum + row.interes, 0)
 
     // Adaptar summary
     const adaptedSummary = {
         principal: principal,
         termMonths: summary.termMonths || summary.TermMonths || 0,
         monthlyRate: monthlyRate,
-        totalPaid: summary.totalPaid || summary.TotalPaid || 0,
-        totalInterest: summary.totalInterest || summary.TotalInterest || 0,
+        totalPaid: totalPaid,
+        totalInterest: totalInterest,
         npv: npv,
         irrMonthly: irrMonthly,
         irrAnnual: irrAnnual
