@@ -278,12 +278,16 @@ export function adaptBackendResult(backendResult, inputData) {
     const graceType = config.graceType || 'sin'
     const graceMonths = Number(config.graceMonths) || 0
     
-    // Obtener tasa mensual (puede venir como porcentaje o decimal)
+    // Calcular tasa mensual desde la configuración original (más confiable que el summary del backend)
+    // El backend siempre devuelve MonthlyRate como porcentaje (ej: 0.72 para 0.72%)
     const monthlyRateFromSummary = summary.monthlyRate || summary.MonthlyRate || 0
-    // Si es mayor a 1, asumimos que es porcentaje, si no, es decimal
-    const monthlyRate = monthlyRateFromSummary > 1 
-        ? monthlyRateFromSummary / 100 
-        : monthlyRateFromSummary
+    // El backend devuelve la tasa como porcentaje, siempre dividir por 100
+    let monthlyRate = monthlyRateFromSummary / 100
+    
+    // Si no hay tasa en el summary, calcularla desde la configuración
+    if (!monthlyRateFromSummary && inputData?.configSnapshot) {
+        monthlyRate = getMonthlyRate(inputData.configSnapshot)
+    }
     
     // Adaptar schedule del backend al formato del frontend
     let previousBalance = summary.principal || summary.Principal || 0
@@ -302,7 +306,8 @@ export function adaptBackendResult(backendResult, inputData) {
         if (graceType === 'total' && index < graceMonths) {
             interest = 0  // No se muestra interés durante gracia total
             principalPaid = 0  // No hay amortización
-            // El saldo final se calcula capitalizando: Saldo Final = Saldo Inicial * (1 + tasa)
+            // El saldo final se calcula capitalizando: Saldo Final = Saldo Inicial * (1 + TEM)
+            // TEM es un decimal (ej: 0.0072 para 0.72%), no un porcentaje
             balance = saldoInicial * (1 + monthlyRate)
         }
         
