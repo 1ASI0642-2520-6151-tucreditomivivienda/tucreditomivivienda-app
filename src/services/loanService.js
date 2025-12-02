@@ -33,13 +33,25 @@ function getCapitalizationsPerYear(capitalization) {
 }
 
 // Cuota del método francés
+// R = C * ( TEP * (1 + TEP)^n ) / ( (1 + TEP)^n - 1 )
+// donde:
+//   R   = cuota
+//   C   = principal (monto del préstamo)
+//   TEP = tasa efectiva del período (monthlyRate)
+//   n   = número total de cuotas (periods)
 function frenchInstallment(principal, monthlyRate, periods) {
     if (periods <= 0) return 0
     if (monthlyRate === 0) {
+        // Caso sin interés: cuota = C / n
         return principal / periods
     }
-    const i = monthlyRate
-    return (principal * i) / (1 - Math.pow(1 + i, -periods))
+
+    const TEP = monthlyRate
+    const n = periods
+    const factor = Math.pow(1 + TEP, n)
+
+    // R = C * ( TEP * (1 + TEP)^n ) / ( (1 + TEP)^n - 1 )
+    return principal * (TEP * factor) / (factor - 1)
 }
 
 // VAN de los flujos (tasa por periodo)
